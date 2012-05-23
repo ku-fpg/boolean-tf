@@ -1,39 +1,31 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FunctionalDependencies
-           , UndecidableInstances, ScopedTypeVariables
-  #-}
+{-# LANGUAGE TypeFamilies, FlexibleContexts, FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
 -- Module      :  Data.Boolean
--- Copyright   :  (c) Conal Elliott 2009
+-- Copyright   :  (c) Conal Elliott 2009, (c) The University of Kansas
 -- License     :  BSD3
--- 
--- Maintainer  :  conal@conal.net
+--
+-- Maintainer  :  conal@conal.net, andygill@ku.edu
 -- Stability   :  experimental
--- 
--- Some classes for generalized boolean operations.
--- 
+--
+-- Some classes for generalized boolean operations, adapted for type functions,
+--
 -- In this design, for if-then-else, equality and inequality tests, the
--- boolean type depends functionally on the value type.  This dependency
+-- boolean type depends on the value type.  This type function
 -- allows the boolean type to be inferred in a conditional expression.
--- 
--- I also tried using a unary type constructor class.  The class doesn't work
--- for regular booleans, so generality is lost.  Also, we'd probably have
--- to wire class constraints in like: @(==*) :: Eq a => f Bool -> f a -> f
--- a -> f a@, which disallows situations needing additional constraints,
--- e.g., Show.
--- 
+--
 ----------------------------------------------------------------------
 
 module Data.Boolean
-  (
-    Boolean(..),IfB(..), boolean, cond, crop
+  ( Boolean(..)
+  , BooleanOf
+  , IfB(..), boolean, cond, crop
   , EqB(..), OrdB(..), minB, maxB
   ) where
 
 import Data.Monoid (Monoid,mempty)
-import Control.Applicative (Applicative(pure),liftA2,liftA3)
-
+import Control.Applicative (Applicative(pure,(<*>)),liftA2,liftA3)
 
 {--------------------------------------------------------------------
     Classes
@@ -55,45 +47,47 @@ instance Boolean Bool where
   (&&*) = (&&)
   (||*) = (||)
 
+-- | 'BooleanOf' computed the boolean analog of a specific type.
+type family BooleanOf a
+
 -- | Types with conditionals
-class Boolean bool => IfB bool a | a -> bool where
-  ifB  :: bool -> a -> a -> a
+class (Boolean (BooleanOf a)) => IfB a where
+  ifB  :: (bool ~ BooleanOf a) => bool -> a -> a -> a
 
 -- | Expression-lifted conditional with condition last
-boolean :: IfB bool a => a -> a -> bool -> a
+boolean :: IfB a => a -> a -> BooleanOf a -> a
 boolean t e bool = ifB bool t e
 
 -- | Point-wise conditional
-cond :: (Applicative f, IfB bool a) => f bool -> f a -> f a -> f a
+cond :: (Applicative f, IfB a, bool ~ BooleanOf a) => f bool -> f a -> f a -> f a
 cond = liftA3 ifB
 
 -- | Crop a function, filling in 'mempty' where the test yeis false.
-crop :: (Applicative f, Monoid (f a), IfB bool a) => f bool -> f a -> f a
+crop :: (Applicative f, Monoid (f a), IfB a, bool ~ BooleanOf a) => f bool -> f a -> f a
 crop r f = cond r f mempty
-
 
 infix  4  ==*, /=*
 
 -- | Types with equality.  Minimum definition: '(==*)'.
-class Boolean bool => EqB bool a | a -> bool where
-  (==*), (/=*) :: a -> a -> bool
+class (Boolean (BooleanOf a)) => EqB a where
+  (==*), (/=*) :: (bool ~ BooleanOf a) => a -> a -> bool
   u /=* v = notB (u ==* v)
 
 infix  4  <*, <=*, >=*, >*
 
 -- | Types with inequality.  Minimum definition: '(<*)'.
-class Boolean bool => OrdB bool a | a -> bool where
-  (<*), (<=*), (>*), (>=*) :: a -> a -> bool
+class (Boolean (BooleanOf a)) => OrdB a where
+  (<*), (<=*), (>*), (>=*) :: (bool ~ BooleanOf a) => a -> a -> bool
   u >*  v = v <* u
   u >=* v = notB (u <* v)
   u <=* v = v >=* u
 
 -- | Variant of 'min' using 'ifB' and '(<=*)'
-minB :: (IfB bool a, OrdB bool a) => a -> a -> a
+minB :: (IfB a, OrdB a) => a -> a -> a
 u `minB` v = ifB (u <=* v) u v
 
 -- | Variant of 'max' using 'ifB' and '(>=*)'
-maxB :: (IfB bool a, OrdB bool a) => a -> a -> a
+maxB :: (IfB a, OrdB a) => a -> a -> a
 u `maxB` v = ifB (u >=* v) u v
 
 {--------------------------------------------------------------------
@@ -103,35 +97,28 @@ u `maxB` v = ifB (u >=* v) u v
 ife :: Bool -> a -> a -> a
 ife c t e = if c then t else e
 
--- I'd give the following instances:
--- 
---     instance IfB  Bool a where ifB = ife
---     instance EqB  Bool a where { (==*) = (==) ; (/=*) = (/=) }
---     instance OrdB Bool a where { (<*) = (<) ; (<=*) = (<=)}
--- 
--- Sadly, doing so would break the a->bool fundep, which is needed elsewhere
--- for disambiguation.  So use the instances above as templates, filling
--- in specific types for a.
+data Id a = Id a
+-- Monad, Functor, Applicative Functor
 
+instance Applicative Id where
+        pure = Id
+        Id f <*> Id a = Id (f a)
 
-instance IfB  Bool Float where ifB = ife
-instance EqB  Bool Float where { (==*) = (==) ; (/=*) = (/=) }
-instance OrdB Bool Float where { (<*) = (<) ; (<=*) = (<=) }
+instance Functor Id where
+        fmap f (Id a) = Id (f a)
 
--- Similarly for other types.  
+type instance BooleanOf (Id a) = Id Bool
 
+instance Boolean (Id Bool) where
+  true = pure true
+  false = pure false
+  notB  = fmap notB
+  (&&*) = liftA2 (&&*)
+  (||*) = liftA2 (||*)
 
-instance (IfB bool p, IfB bool q) => IfB bool (p,q) where
-  ifB w (p,q) (p',q') = (ifB w p p', ifB w q q')
-
-instance (IfB bool p, IfB bool q, IfB bool r) => IfB bool (p,q,r) where
-  ifB w (p,q,r) (p',q',r') = (ifB w p p', ifB w q q', ifB w r r')
-
-instance (IfB bool p, IfB bool q, IfB bool r, IfB bool s) => IfB bool (p,q,r,s) where
-  ifB w (p,q,r,s) (p',q',r',s') =
-    (ifB w p p', ifB w q q', ifB w r r', ifB w s s')
-
-
+instance IfB (Id a) where ifB (Id b) = ife b
+instance (Eq a) => EqB (Id a) where { (==*) = liftA2 (==) ; (/=*) = liftA2 (/=) }
+instance (Ord a) => OrdB (Id a) where { (<*) = liftA2 (<) ; (<=*) = liftA2 (<=) }
 
 -- Standard pattern for applicative functors:
 
@@ -142,30 +129,13 @@ instance Boolean bool => Boolean (z -> bool) where
   (&&*) = liftA2 (&&*)
   (||*) = liftA2 (||*)
 
-instance IfB bool a => IfB (z -> bool) (z -> a) where
+
+type instance BooleanOf (a -> b) = a -> BooleanOf b
+instance IfB a => IfB (z -> a) where
   ifB = cond
 
-instance EqB  bool a => EqB  (z -> bool) (z -> a) where
+instance EqB a => EqB  (z -> a) where
   { (==*) = liftA2 (==*) ; (/=*) = liftA2 (/=*) }
-instance OrdB bool a => OrdB (z -> bool) (z -> a) where
+instance OrdB a => OrdB (z -> a) where
   { (<*) = liftA2(<*) ; (<=*) = liftA2(<=*) }
 
-
-{-
-
-{--------------------------------------------------------------------
-    Tests
---------------------------------------------------------------------}
-
-t1 :: String
-t1 = ifB True "foo" "bar"
-
-t2 :: Float -> Float
-t2 = ifB (< 0) negate id
-
---     No instance for (IfB (a -> Bool) (a1 -> a1))
---       arising from a use of `ifB'
--- 
--- t2 = ifB (< 0) negate id                -- abs
-
--}

@@ -50,7 +50,7 @@ instance Boolean Bool where
 
 
 -- | Types with conditionals
-class (Boolean (BooleanOf a)) => IfB a where
+class {- (Boolean (BooleanOf a)) => -} IfB a where
   type BooleanOf a
   ifB  :: (bool ~ BooleanOf a) => bool -> a -> a -> a
 

@@ -19,7 +19,6 @@
 
 module Data.Boolean
   ( Boolean(..)
-  , BooleanOf
   , IfB(..), boolean, cond, crop
   , EqB(..), OrdB(..), minB, maxB
   ) where
@@ -48,10 +47,11 @@ instance Boolean Bool where
   (||*) = (||)
 
 -- | 'BooleanOf' computed the boolean analog of a specific type.
-type family BooleanOf a
+
 
 -- | Types with conditionals
 class (Boolean (BooleanOf a)) => IfB a where
+  type BooleanOf a
   ifB  :: (bool ~ BooleanOf a) => bool -> a -> a -> a
 
 -- | Expression-lifted conditional with condition last
@@ -107,8 +107,6 @@ instance Applicative Id where
 instance Functor Id where
         fmap f (Id a) = Id (f a)
 
-type instance BooleanOf (Id a) = Id Bool
-
 instance Boolean (Id Bool) where
   true = pure true
   false = pure false
@@ -116,7 +114,9 @@ instance Boolean (Id Bool) where
   (&&*) = liftA2 (&&*)
   (||*) = liftA2 (||*)
 
-instance IfB (Id a) where ifB (Id b) = ife b
+instance IfB (Id a) where
+  type BooleanOf (Id a) = Id Bool
+  ifB (Id b) = ife b
 instance (Eq a) => EqB (Id a) where { (==*) = liftA2 (==) ; (/=*) = liftA2 (/=) }
 instance (Ord a) => OrdB (Id a) where { (<*) = liftA2 (<) ; (<=*) = liftA2 (<=) }
 
@@ -130,8 +130,9 @@ instance Boolean bool => Boolean (z -> bool) where
   (||*) = liftA2 (||*)
 
 
-type instance BooleanOf (a -> b) = a -> BooleanOf b
+
 instance IfB a => IfB (z -> a) where
+  type BooleanOf (z -> a) = z -> BooleanOf a
   ifB = cond
 
 instance EqB a => EqB  (z -> a) where

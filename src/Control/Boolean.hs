@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
--- Module      :  Data.Boolean
+-- Module      :  Control.Boolean
 -- Copyright   :  (c) The University of Kansas
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 ----------------------------------------------------------------------
 
-module Data.Boolean
+module Control.Boolean
   ( Boolean(..)
   , IfB(..), boolean, cond, crop
   , EqB(..), OrdB(..), minB, maxB

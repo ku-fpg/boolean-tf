@@ -103,17 +103,17 @@ type instance BooleanOf Bool    = Bool
 type instance BooleanOf Char    = Bool
 
 instance IfB Int where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 instance IfB Integer where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 instance IfB Float where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 instance IfB Double where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 instance IfB Bool where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 instance IfB Char where
-  { ifB i f e = if i then f else e }
+  { ifB i t e = if i then t else e }
 
 instance EqB  Int where
   { (==*) = (==); (/=*) = (/=) }

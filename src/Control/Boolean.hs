@@ -101,6 +101,7 @@ type instance BooleanOf Float   = Bool
 type instance BooleanOf Double  = Bool
 type instance BooleanOf Bool    = Bool
 type instance BooleanOf Char    = Bool
+type instance BooleanOf [a]     = BooleanOf a
 
 instance IfB Int where
   { ifB i t e = if i then t else e }

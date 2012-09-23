@@ -3,17 +3,19 @@
 ----------------------------------------------------------------------
 -- |
 -- Module      :  Data.Boolean
--- Copyright   :  (c) Conal Elliott 2009, (c) The University of Kansas
+-- Copyright   :  (c) The University of Kansas
 -- License     :  BSD3
 --
--- Maintainer  :  conal@conal.net, andygill@ku.edu
+-- Maintainer  :  andygill@ku.edu
 -- Stability   :  experimental
 --
--- Some classes for generalized boolean operations, adapted for type functions,
+-- Some classes for generalized boolean operations, adapted for type functions.
 --
 -- In this design, for if-then-else, equality and inequality tests, the
--- boolean type depends on the value type.  This type function
+-- boolean type depends on the value type.  A type function
 -- allows the boolean type to be inferred in a conditional expression.
+--
+-- Based on the boolean package, (c) Conal Elliott 2009.
 --
 ----------------------------------------------------------------------
 
@@ -24,7 +26,7 @@ module Data.Boolean
   ) where
 
 import Data.Monoid (Monoid,mempty)
-import Control.Applicative (Applicative(pure,(<*>)),liftA2,liftA3)
+import Control.Applicative (Applicative(pure),liftA2,liftA3)
 
 {--------------------------------------------------------------------
     Classes
@@ -50,7 +52,7 @@ instance Boolean Bool where
 
 
 -- | Types with conditionals
-class {- (Boolean (BooleanOf a)) => -} IfB a where
+class IfB a where
   type BooleanOf a
   ifB  :: (bool ~ BooleanOf a) => bool -> a -> a -> a
 
@@ -90,37 +92,7 @@ u `minB` v = ifB (u <=* v) u v
 maxB :: (IfB a, OrdB a) => a -> a -> a
 u `maxB` v = ifB (u >=* v) u v
 
-{--------------------------------------------------------------------
-    Some instances
---------------------------------------------------------------------}
-
-ife :: Bool -> a -> a -> a
-ife c t e = if c then t else e
-
-data Id a = Id a
--- Monad, Functor, Applicative Functor
-
-instance Applicative Id where
-        pure = Id
-        Id f <*> Id a = Id (f a)
-
-instance Functor Id where
-        fmap f (Id a) = Id (f a)
-
-instance Boolean (Id Bool) where
-  true = pure true
-  false = pure false
-  notB  = fmap notB
-  (&&*) = liftA2 (&&*)
-  (||*) = liftA2 (||*)
-
-instance IfB (Id a) where
-  type BooleanOf (Id a) = Id Bool
-  ifB (Id b) = ife b
-instance (Eq a) => EqB (Id a) where { (==*) = liftA2 (==) ; (/=*) = liftA2 (/=) }
-instance (Ord a) => OrdB (Id a) where { (<*) = liftA2 (<) ; (<=*) = liftA2 (<=) }
-
--- Standard pattern for applicative functors:
+-- Standard pattern for functions
 
 instance Boolean bool => Boolean (z -> bool) where
   true  = pure true
@@ -128,8 +100,6 @@ instance Boolean bool => Boolean (z -> bool) where
   notB  = fmap notB
   (&&*) = liftA2 (&&*)
   (||*) = liftA2 (||*)
-
-
 
 instance IfB a => IfB (z -> a) where
   type BooleanOf (z -> a) = z -> BooleanOf a

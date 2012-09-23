@@ -21,6 +21,7 @@
 
 module Control.Boolean
   ( Boolean(..)
+  , BooleanOf
   , IfB(..), boolean, cond, crop
   , EqB(..), OrdB(..), minB, maxB
   ) where
@@ -49,11 +50,10 @@ instance Boolean Bool where
   (||*) = (||)
 
 -- | 'BooleanOf' computed the boolean analog of a specific type.
-
+type family BooleanOf a
 
 -- | Types with conditionals
-class IfB a where
-  type BooleanOf a
+class (Boolean (BooleanOf a)) => IfB a where
   ifB  :: (bool ~ BooleanOf a) => bool -> a -> a -> a
 
 -- | Expression-lifted conditional with condition last
@@ -101,8 +101,9 @@ instance Boolean bool => Boolean (z -> bool) where
   (&&*) = liftA2 (&&*)
   (||*) = liftA2 (||*)
 
+type instance BooleanOf (z -> a) = z -> BooleanOf a
+
 instance IfB a => IfB (z -> a) where
-  type BooleanOf (z -> a) = z -> BooleanOf a
   ifB = cond
 
 instance EqB a => EqB  (z -> a) where

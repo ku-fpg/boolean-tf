@@ -101,7 +101,9 @@ type instance BooleanOf Float   = Bool
 type instance BooleanOf Double  = Bool
 type instance BooleanOf Bool    = Bool
 type instance BooleanOf Char    = Bool
-type instance BooleanOf [a]     = BooleanOf a -- I am not sure what this means?
+type instance BooleanOf [a]     = BooleanOf a
+type instance BooleanOf (a,b)   = BooleanOf a
+type instance BooleanOf (a,b,c) = BooleanOf a
 
 instance IfB Int where
   { ifB i t e = if i then t else e }
@@ -115,6 +117,15 @@ instance IfB Bool where
   { ifB i t e = if i then t else e }
 instance IfB Char where
   { ifB i t e = if i then t else e }
+
+instance IfB a => IfB [a] where
+  { ifB = liftA2 . ifB }
+
+instance (IfB a, IfB b, Boolean a ~ Boolean b) => IfB (a,b) where
+  { ifB i ~(a1,b1) ~(a2,b2) = (ifB i a1 a2,ifB i b1 b2) }
+
+instance (IfB a, IfB b, IfB c, Boolean a ~ Boolean b, Boolean b ~ Boolean c) => IfB (a,b,c) where
+  { ifB i ~(a1,b1,c1) ~(a2,b2,c2) = (ifB i a1 a2,ifB i b1 b2,ifB i c1 c2) }
 
 instance EqB  Int where
   { (==*) = (==); (/=*) = (/=) }

@@ -1,16 +1,17 @@
 Name:                boolean-tf
 Version:             0.1
 Cabal-Version:       >= 1.2
-Synopsis:            Generalized booleans
+Synopsis:            Generalized booleans via type functions
 Category:            Data
 Description:
-  Some classes for generalized boolean operations.
+  Some classes for generalized boolean operations, using type functions.
+  Derived from Conal Elliott's boolean package.
   .
-  Copyright 2009 Conal Elliott; BSD3 license.
-Author:              Conal Elliott,
-Maintainer:          conal@conal.net
-Package-Url:         http://code.haskell.org/~conal/code/Boolean
-Copyright:           (c) 2009 by Conal Elliott, (c) 2012 The University of Kansas
+  Copyright 2012 The University of Kansas; BSD3 license. 
+Author:              Andy Gill
+Maintainer:          andygill@ku.edu
+Package-Url:         http://ittc.ku.edu/csdl/fpg/Tools/Boolean
+Copyright:           (c) 2012 The University of Kansas
 License:             BSD3
 License-File:        COPYING
 Stability:           experimental

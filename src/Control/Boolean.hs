@@ -92,7 +92,55 @@ u `minB` v = ifB (u <=* v) u v
 maxB :: (IfB a, OrdB a) => a -> a -> a
 u `maxB` v = ifB (u >=* v) u v
 
--- Standard pattern for functions
+
+-- Instances for Prelude types.
+
+type instance BooleanOf Int     = Bool
+type instance BooleanOf Integer = Bool
+type instance BooleanOf Float   = Bool
+type instance BooleanOf Double  = Bool
+type instance BooleanOf Bool    = Bool
+type instance BooleanOf Char    = Bool
+
+instance IfB Int where
+  { ifB i f e = if i then f else e }
+instance IfB Integer where
+  { ifB i f e = if i then f else e }
+instance IfB Float where
+  { ifB i f e = if i then f else e }
+instance IfB Double where
+  { ifB i f e = if i then f else e }
+instance IfB Bool where
+  { ifB i f e = if i then f else e }
+instance IfB Char where
+  { ifB i f e = if i then f else e }
+
+instance EqB  Int where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Int where
+  { (<*) = (<) }
+instance EqB  Integer where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Integer where
+  { (<*) = (<) }
+instance EqB  Float where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Float where
+  { (<*) = (<) }
+instance EqB  Double where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Double where
+  { (<*) = (<) }
+instance EqB  Bool where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Bool where
+  { (<*) = (<) }
+instance EqB  Char where
+  { (==*) = (==); (/=*) = (/=) }
+instance OrdB Char where
+  { (<*) = (<) }
+
+-- Instances for functions, using the standard pattern for applicative functions.
 
 instance Boolean bool => Boolean (z -> bool) where
   true  = pure true
